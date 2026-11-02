@@ -12,6 +12,12 @@ import sys
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+# Imported here, at server start, not lazily inside connection(). On Windows a lazy import during the
+# first MCP tool call hung until the client timed out: the connector's import starts a subprocess that
+# inherits stdin, which the stdio transport is blocked reading. Importing up front avoids that.
+import snowflake.connector
+from cryptography.hazmat.primitives import serialization
+
 from .config import load_settings
 
 QUERY_TAG = "cnde_a5_mcp"
@@ -37,7 +43,6 @@ class QueryResult:
 
 
 def _load_private_key(path: str) -> bytes:
-    from cryptography.hazmat.primitives import serialization
 
     with open(path, "rb") as fh:
         key = serialization.load_pem_private_key(fh.read(), password=None)
@@ -60,8 +65,6 @@ def connection():
     global _conn
     if _conn is not None and not _conn.is_closed():
         return _conn
-    import snowflake.connector
-
     s = settings()
     _conn = snowflake.connector.connect(
         account=s["account"],
