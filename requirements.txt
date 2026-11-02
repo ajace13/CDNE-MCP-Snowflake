@@ -1,0 +1,5 @@
+# Python 3.11 or newer
+mcp[cli]>=1.9,<2          # FastMCP lives at mcp.server.fastmcp in 1.x (2.x renamed it)
+snowflake-connector-python>=3.12
+cryptography>=42
+pytest>=8
