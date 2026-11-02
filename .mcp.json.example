@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "sakila-warehouse": {
+      "type": "stdio",
+      "command": "C:\\Users\\aidan\\OneDrive - The University of Chicago\\MS APDS\\Cloud Native Data Engineering\\Assignment5\\.venv\\Scripts\\python.exe",
+      "args": [
+        "C:\\Users\\aidan\\OneDrive - The University of Chicago\\MS APDS\\Cloud Native Data Engineering\\Assignment5\\mcp_server.py"
+      ],
+      "env": {
+        "SNOWFLAKE_CONFIG_FILE": "C:\\Users\\aidan\\AppData\\Local\\snowflake\\config.toml",
+        "SNOWFLAKE_CONNECTION": "claude",
+        "SNOWFLAKE_ROLE": "A5_APP_RO"
+      }
+    }
+  }
+}
