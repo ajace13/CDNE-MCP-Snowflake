@@ -6,6 +6,7 @@ display copy of the SQL with the values filled in is kept for the app's panel.
 """
 from __future__ import annotations
 
+import atexit
 import datetime as dt
 import sys
 from dataclasses import dataclass, field
@@ -80,6 +81,7 @@ def connection():
     # Only the configured (read-only) role may act in this session, even if the user also holds
     # other roles and has DEFAULT_SECONDARY_ROLES = ALL.
     _conn.cursor().execute("USE SECONDARY ROLES NONE")
+    atexit.register(_conn.close)
     print(f"[warehouse] connected as {s['user']} / role {s['role']} "
           f"({s['database']}.{s['schema']}, settings from {s['_source']})", file=sys.stderr)
     return _conn

@@ -3,8 +3,8 @@
 1. Connects with your existing Week 4 key pair and prints who/where you are.
 2. Lists the SAKILA.DW tables and runs one real aggregate (revenue by store).
 3. Looks up what that query cost, through the same code the MCP tool uses.
-4. Tries to create a TEMPORARY table, which should be REFUSED under the read-only role.
-   (A temporary table disappears when the session ends, so even if it isn't refused, nothing lasts.)
+4. Tries an UPDATE that touches no rows, which must be REFUSED under the read-only role,
+   and lists the role's privileges (expect only USAGE and SELECT).
 """
 from __future__ import annotations
 
@@ -40,13 +40,21 @@ def main() -> None:
     else:
         print("\nCost lookup: " + cost["message"])
 
-    print("\nRead-only check: trying CREATE TEMPORARY TABLE ...")
+    # A write the role must not be allowed to make. WHERE 1 = 0 means that even if the privilege
+    # existed, no row would change; Snowflake checks privileges before it looks at any row.
+    # (A TEMPORARY table is not a valid test: any role with USAGE on a schema may create one.)
+    print("\nRead-only check: trying UPDATE SAKILA.DW.DIM_STORE ... WHERE 1 = 0 ...")
     try:
-        db.run("CREATE TEMPORARY TABLE A5_READ_ONLY_PROBE (x INT)")
-        print("  NOT refused. This role can create tables, so it is not read-only. "
-              "Run sql/01_app_readonly_role.sql and set SNOWFLAKE_ROLE=A5_APP_RO.")
+        db.run("UPDATE SAKILA.DW.DIM_STORE SET manager_name = manager_name WHERE 1 = 0")
+        print("  NOT refused. This role has UPDATE on SAKILA.DW, so it is not read-only. "
+              "Check SNOWFLAKE_ROLE=A5_APP_RO and sql/register_key_and_role.sql.")
     except Exception as exc:  # noqa: BLE001
         print(f"  Refused, as expected: {str(exc).splitlines()[0]}")
+
+    role = s["role"] if s["role"].replace("_", "").isalnum() else "A5_APP_RO"
+    grants = db.run(f"SHOW GRANTS TO ROLE {role}")
+    privs = sorted({str(g.get('privilege')) for g in grants.rows})
+    print(f"  Privileges held by {role}: {', '.join(privs)}")
 
 
 if __name__ == "__main__":
