@@ -21,11 +21,11 @@ Every line of the assignment, mapped to the code that meets it and the evidence 
 
 | Requirement | Where | Evidence |
 | --- | --- | --- |
-| User types a question and gets an answer | `app.py`: question form, then `qa/router.py` picks a tool and `qa/answer.py` writes the answer. No LLM and no API key: keyword rules map the question to one of the four tools | Test `test_app_answers_and_shows_tool_sql_rows_cost`. Screenshot: _live_ |
+| User types a question and gets an answer | `app.py`: question form, then `qa/router.py` picks a tool and `qa/answer.py` writes the answer. No LLM and no API key: keyword rules map the question to one of the four tools | Test `test_app_answers_and_shows_tool_sql_rows_cost`. Screenshot: `writeup/screenshots/a_customers_action_july2005.png` |
 | Local is fine (SiS preferred) | Runs locally: `.venv\Scripts\python -m streamlit run app.py`. It uses the same `warehouse/` tools as the MCP server | |
-| A chart that changes with the answer | `draw_chart()` in `app.py`. Monthly answers get a line chart; breakdowns by category, store, country or rating get a sorted bar chart; single numbers get a "rows vs. different customers" bar chart; a no-data answer gets a timeline of the dates asked for against the dates the data covers; a list gets rentals by category; a cost answer gets compile/queue/execute time | Screenshots: _live_ |
+| A chart that changes with the answer | `draw_chart()` in `app.py`. Monthly answers get a line chart; breakdowns by category, store, country or rating get a sorted bar chart; single numbers get a "rows vs. different customers" bar chart; a no-data answer gets a timeline of the dates asked for against the dates the data covers; a list gets rentals by category; a cost answer gets compile/queue/execute time | Screenshots: `a_customers_action_july2005.png` (rows vs customers), `e_revenue_by_month.png` (monthly line, gap called out) |
 | A filter that keeps its value when the script reruns | Sidebar `Dates`, `Store` and `Film category` use `key=` (`f_dates`, `f_store`, `f_category`), so Streamlit keeps them in `session_state` across reruns. The answer shows which filters were in effect, and offers "Ask again with current filters" if they change | Test `test_app_filter_keeps_value_across_reruns` |
-| Usable without a tutorial, no raw JSON | Example-question buttons, a "What I can answer" list in the sidebar, a one-sentence headline, `st.metric`, a formatted table (dollars, thousands separators). Tool results are never printed as dicts | Test asserts no `{` in the headline. Screenshot: _live_ |
+| Usable without a tutorial, no raw JSON | Example-question buttons, a "What I can answer" list in the sidebar, a one-sentence headline, `st.metric`, a formatted table (dollars, thousands separators). Tool results are never printed as dicts | Test asserts no `{` in the headline. Screenshots: all of `writeup/screenshots/` |
 
 ## Part 3: Show the user what happened (25 pts)
 

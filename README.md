@@ -1,4 +1,4 @@
-# CDNE Assignment 5: MCP server and Streamlit app over the Sakila star schema
+# CNDE Assignment 5: MCP server and Streamlit app over the Sakila star schema
 
 Two ways to ask the Week 4 warehouse a question in plain English, built on the same four tools:
 
@@ -27,7 +27,7 @@ Validation, in `warehouse/tools.py`:
 
 ## Why four bounded tools instead of one "run any SQL" tool
 
-*(Part 1 paragraph, draft)* A single tool that runs whatever SQL the model writes turns every question into a security, cost and correctness gamble. It can express `DROP TABLE`, a scan of a billion rows, or `COUNT(*)` on a Type 2 customer dimension. None of those can be validated, because SQL is a language, not a value. Four bounded tools invert that. Each argument is typed and checked against an allow-list before any SQL exists, so injection and runaway scans can't be expressed at all. The grain is built into the tools, so "how many customers" runs `COUNT(DISTINCT customer_id)` instead of counting rental rows. Every answer comes from SQL a person can read and rerun, and its cost can be looked up. The price is coverage: a fair question that doesn't fit the four tools gets "I can't answer that" instead of an improvised query. For a warehouse that non-SQL users will trust, that honest refusal is the behavior we want. The read-only Snowflake role is the backstop: even a tool talked into misbehaving cannot write.
+A single tool that runs whatever SQL the model writes turns every question into a security, cost and correctness gamble. It can express `DROP TABLE`, a scan of a billion rows, or `COUNT(*)` on a Type 2 customer dimension. None of those can be validated, because SQL is a language, not a value. Four bounded tools invert that. Each argument is typed and checked against an allow-list before any SQL exists, so injection and runaway scans can't be expressed at all. The grain is built into the tools, so "how many customers" runs `COUNT(DISTINCT customer_id)` instead of counting rental rows. Every answer comes from SQL a person can read and rerun, and its cost can be looked up. The price is coverage: a fair question that doesn't fit the four tools gets "I can't answer that" instead of an improvised query. For a warehouse that non-SQL users will trust, that honest refusal is the behavior we want. The read-only Snowflake role is the backstop: even a tool talked into misbehaving cannot write.
 
 ## The Streamlit app
 
