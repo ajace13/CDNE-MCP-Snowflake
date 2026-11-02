@@ -93,7 +93,7 @@ NOT_IN_DATA = {
     r"\bweb(site)?\b|\bclicks?\b|\btraffic\b|\bvisits?\b": "web traffic",
     r"\bweather\b": "weather",
     r"\b(christmas|thanksgiving|halloween|easter|valentine'?s|new year'?s|holiday\w*)\b":
-        "!The tools don't know holiday names. Ask with the date instead, e.g. 'revenue on 2005-07-04'.",
+        "!The tools don't know holiday names. Ask with the date instead, e.g. 'revenue on 2005-07-06'.",
     r"\bpercent(age)?s?\b|%|\bshare of\b|\bratios?\b|\b(churn|retention|conversion|growth) rates?\b|\bchurn\b|\bretention\b":
         "!These tools return counts, totals and averages, not rates or percentages. Ask for the two numbers "
         "you would divide (e.g. 'how many customers rented Action films' and 'how many customers rented').",
@@ -421,8 +421,9 @@ def route(question: str, defaults: Defaults | None = None) -> Plan:
                     + " to anything these tools measure, so rather than guess, nothing was run.")
     if vague:
         metric, group_by = "revenue", compare_groups or "month"
-        plan.assumptions.insert(0, "The question doesn't say what to measure, so this shows revenue by month as a "
-                                   "starting point. Try asking for something specific, e.g. 'revenue by category in July 2005' "
+        shown = "revenue" if compare_groups else "revenue by month"
+        plan.assumptions.insert(0, f"The question doesn't say what to measure, so this shows {shown} as a starting "
+                                   "point. Try asking for something specific, e.g. 'revenue by category in July 2005' "
                                    "or 'how many customers rented Comedy films in 2005'.")
     elif metric is None:
         metric = "revenue"

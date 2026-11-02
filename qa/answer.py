@@ -80,6 +80,9 @@ def cost_line(cost: dict | None) -> str:
         return "Cost not available."
     if not cost.get("found"):
         return cost.get("message", "Cost not found in query history yet.")
+    if not cost.get("bytes_scanned") and not cost.get("estimated_warehouse_credits"):
+        return (f"{cost['elapsed_seconds']:.2f} s elapsed, 0 bytes scanned, no warehouse credits: Snowflake answered "
+                "from its result cache because this exact query ran recently. The first run of it did scan data.")
     return (f"{cost['elapsed_seconds']:.2f} s elapsed, {_bytes(cost['bytes_scanned'])} scanned, "
             f"~{cost['estimated_warehouse_credits']:.6f} warehouse credits (estimate) + "
             f"{(cost['cloud_services_credits'] or 0):.6f} cloud-services credits")
