@@ -46,7 +46,7 @@ Before = the first version of the router. After = now.
 - **"What did that query cost?" would have reported the cost of the cost lookup.** The app runs `query_cost` after every answer, so Snowflake's "last query" was always the cost query. The app now passes the previous answer's query id.
 - **A partial-month note appeared on answers that didn't include those months.** Now only shown when May 2005 or February 2006 is in the result.
 
-## Closing write-up (draft: screenshots from the live run go here)
+## Closing write-up (screenshots: `writeup/screenshots/`)
 
 **Answered well: "How many customers rented Action films in July 2005?"** The router hears "customers" and picks `distinct_customers`, so the SQL is `COUNT(DISTINCT c.customer_id)`. The answer says 318 different customers, who made 464 rentals. Both numbers are on screen, the chart puts them side by side, and the panel shows the tool, its arguments, the SQL, the rows returned, what one row is and what the query cost. A user who expected 464 can see exactly why the answer is 318.
 

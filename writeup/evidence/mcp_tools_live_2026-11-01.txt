@@ -1,0 +1,283 @@
+
+### describe_schema()
+{
+ "database": "SAKILA",
+ "schema": "DW",
+ "data_covers": "Rentals 2005-05-24 to 2006-02-14; payments 2005-05-24 to 2006-02-14. Questions about other dates have no data.",
+ "not_in_the_data": "Costs, profit, inventory purchase prices, reviews or ratings by customers, web traffic, customer demographics (age, gender, income), anything after the last date above.",
+ "tables": [
+  {
+   "table": "DIM_CUSTOMER",
+   "kind": "dimension",
+   "one_row_is": "One row = one VERSION of a customer (Type 2). Count customers with COUNT(DISTINCT customer_id), never COUNT(*) or customer_key.",
+   "row_count": 599
+  },
+  {
+   "table": "DIM_DATE",
+   "kind": "dimension",
+   "one_row_is": "One row = one calendar day, 2005-01-01 to 2030-12-31, plus -1 for 'no date yet'.",
+   "row_count": 9497
+  },
+  {
+   "table": "DIM_FILM",
+   "kind": "dimension",
+   "one_row_is": "One row = one VERSION of a film (Type 2), with its category and rental rate at the time.",
+   "row_count": 1000
+  },
+  {
+   "table": "DIM_STAFF",
+   "kind": "dimension",
+   "one_row_is": "One row = one staff member (Type 1).",
+   "row_count": 2
+  },
+  {
+   "table": "DIM_STORE",
+   "kind": "dimension",
+   "one_row_is": "One row = one store (Type 1). There are two stores.",
+   "row_count": 2
+  },
+  {
+   "table": "FACT_PAYMENT",
+   "kind": "fact",
+   "one_row_is": "One row = one payment: one amount paid by one customer to one staff member on one date, against one rental. SUM(amount) = revenue.",
+   "row_count": 16044
+  },
+  {
+   "table": "FACT_RENTAL",
+   "kind": "fact",
+   "one_row_is": "One row = one rental: one copy of one film rented by one customer on one date, handled by one staff member. Counting rows counts rentals, NOT customers.",
+   "row_count": 16044
+  }
+ ],
+ "rows_returned": 7,
+ "one_row_is": "One row of this answer = one table in the warehouse.",
+ "sql": "SELECT t.TABLE_NAME,\n       t.TABLE_TYPE,\n       t.ROW_COUNT,\n       LISTAGG(c.COLUMN_NAME || ' ' || c.DATA_TYPE, ', ')\n         WITHIN GROUP (ORDER BY c.ORDINAL_POSITION) AS COLUMNS\nFROM SAKILA.INFORMATION_SCHEMA.TABLES t\nJOIN SAKILA.INFORMATION_SCHEMA.COLUMNS c\n  ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME\nWHERE t.TABLE_SCHEMA = 'DW'\nGROUP BY t.TABLE_NAME, t.TABLE_TYPE, t.ROW_COUNT\nORDER BY t.TABLE_NAME",
+ "query_id": "01c8220b-0303-cbab-001f-8163001a1116"
+}
+
+### distinct_customers, full range
+{
+ "tool": "aggregate",
+ "metric": "distinct_customers",
+ "metric_label": "Customers who rented",
+ "metric_means": "number of different customers who rented",
+ "counted_from": "SAKILA.DW.FACT_RENTAL (rentals)",
+ "group_by": "none",
+ "filters": {
+  "start_date": "2005-05-24",
+  "end_date": "2006-02-14"
+ },
+ "rows": [
+  {
+   "value": 599,
+   "fact_rows": 16044,
+   "distinct_customers": 599
+  }
+ ],
+ "rows_returned": 1,
+ "one_row_is": "one row = the whole period",
+ "rentals_matched": 16044,
+ "sql": "SELECT COUNT(DISTINCT c.customer_id) AS value,\n       COUNT(*) AS fact_rows,\n       COUNT(DISTINCT c.customer_id) AS distinct_customers\nFROM SAKILA.DW.FACT_RENTAL x\nJOIN SAKILA.DW.DIM_FILM f     ON f.film_key = x.film_key\nJOIN SAKILA.DW.DIM_STORE s    ON s.store_key = x.store_key\nJOIN SAKILA.DW.DIM_CUSTOMER c ON c.customer_key = x.customer_key\nWHERE x.rental_ts >= '2005-05-24'\n  AND x.rental_ts < DATEADD(day, 1, '2006-02-14'::DATE)",
+ "query_id": "01c8220b-0303-cc0b-001f-8163001a311e",
+ "no_data": false,
+ "notes": []
+}
+
+### rental_count, full range
+{
+ "tool": "aggregate",
+ "metric": "rental_count",
+ "metric_label": "Rentals",
+ "metric_means": "number of rentals (one row each), NOT number of customers",
+ "counted_from": "SAKILA.DW.FACT_RENTAL (rentals)",
+ "group_by": "none",
+ "filters": {
+  "start_date": "2005-05-24",
+  "end_date": "2006-02-14"
+ },
+ "rows": [
+  {
+   "value": 16044,
+   "fact_rows": 16044,
+   "distinct_customers": 599
+  }
+ ],
+ "rows_returned": 1,
+ "one_row_is": "one row = the whole period",
+ "rentals_matched": 16044,
+ "sql": "SELECT SUM(x.rental_count) AS value,\n       COUNT(*) AS fact_rows,\n       COUNT(DISTINCT c.customer_id) AS distinct_customers\nFROM SAKILA.DW.FACT_RENTAL x\nJOIN SAKILA.DW.DIM_FILM f     ON f.film_key = x.film_key\nJOIN SAKILA.DW.DIM_STORE s    ON s.store_key = x.store_key\nJOIN SAKILA.DW.DIM_CUSTOMER c ON c.customer_key = x.customer_key\nWHERE x.rental_ts >= '2005-05-24'\n  AND x.rental_ts < DATEADD(day, 1, '2006-02-14'::DATE)",
+ "query_id": "01c8220b-0303-cb06-001f-81630019d76e",
+ "no_data": false,
+ "notes": [
+  "This counts rentals (rows). For the number of different customers, use distinct_customers; each row also carries distinct_customers for comparison."
+ ]
+}
+
+### revenue by month, full range
+{
+ "tool": "aggregate",
+ "metric": "revenue",
+ "metric_label": "Revenue ($)",
+ "metric_means": "total of payment amounts",
+ "counted_from": "SAKILA.DW.FACT_PAYMENT (payments)",
+ "group_by": "month",
+ "filters": {
+  "start_date": "2005-05-24",
+  "end_date": "2006-02-14"
+ },
+ "rows": [
+  {
+   "group_value": "2005-05",
+   "value": 4823.44,
+   "fact_rows": 1156,
+   "distinct_customers": 520
+  },
+  {
+   "group_value": "2005-06",
+   "value": 9629.89,
+   "fact_rows": 2311,
+   "distinct_customers": 590
+  },
+  {
+   "group_value": "2005-07",
+   "value": 28368.91,
+   "fact_rows": 6709,
+   "distinct_customers": 599
+  },
+  {
+   "group_value": "2005-08",
+   "value": 24070.14,
+   "fact_rows": 5686,
+   "distinct_customers": 599
+  },
+  {
+   "group_value": "2006-02",
+   "value": 514.18,
+   "fact_rows": 182,
+   "distinct_customers": 158
+  }
+ ],
+ "rows_returned": 5,
+ "one_row_is": "one row = one month",
+ "payments_matched": 16044,
+ "sql": "SELECT TO_CHAR(DATE_TRUNC('month', x.payment_ts), 'YYYY-MM') AS group_value,\n       SUM(x.amount) AS value,\n       COUNT(*) AS fact_rows,\n       COUNT(DISTINCT c.customer_id) AS distinct_customers\nFROM SAKILA.DW.FACT_PAYMENT x\nJOIN SAKILA.DW.DIM_FILM f     ON f.film_key = x.film_key\nJOIN SAKILA.DW.DIM_STORE s    ON s.store_key = x.store_key\nJOIN SAKILA.DW.DIM_CUSTOMER c ON c.customer_key = x.customer_key\nWHERE x.payment_ts >= '2005-05-24'\n  AND x.payment_ts < DATEADD(day, 1, '2006-02-14'::DATE)\nGROUP BY 1\nORDER BY 1\nLIMIT 200",
+ "query_id": "01c8220b-0303-cbe0-001f-8163001a213a",
+ "no_data": false,
+ "notes": []
+}
+
+### revenue in 2004 (outside data)
+{
+ "tool": "aggregate",
+ "metric": "revenue",
+ "metric_label": "Revenue ($)",
+ "metric_means": "total of payment amounts",
+ "counted_from": "SAKILA.DW.FACT_PAYMENT (payments)",
+ "group_by": "none",
+ "filters": {
+  "start_date": "2004-01-01",
+  "end_date": "2004-12-31"
+ },
+ "rows": [],
+ "rows_returned": 0,
+ "one_row_is": "one row = the whole period",
+ "payments_matched": 0,
+ "sql": "SELECT SUM(x.amount) AS value,\n       COUNT(*) AS fact_rows,\n       COUNT(DISTINCT c.customer_id) AS distinct_customers\nFROM SAKILA.DW.FACT_PAYMENT x\nJOIN SAKILA.DW.DIM_FILM f     ON f.film_key = x.film_key\nJOIN SAKILA.DW.DIM_STORE s    ON s.store_key = x.store_key\nJOIN SAKILA.DW.DIM_CUSTOMER c ON c.customer_key = x.customer_key\nWHERE x.payment_ts >= '2004-01-01'\n  AND x.payment_ts < DATEADD(day, 1, '2004-12-31'::DATE)",
+ "query_id": "01c8220b-0303-cb06-001f-81630019d772",
+ "no_data": true,
+ "notes": [
+  "No payments matched these filters. That means there is no data for this slice, not that the answer is zero.",
+  "The data has payments only from 2005-05-24 to 2006-02-14. The requested period 2004-01-01 to 2004-12-31 is entirely outside it, so there is nothing to report for it (not zero: no data)."
+ ]
+}
+
+### revenue Sci-Fi store 2, 2005-06
+{
+ "tool": "aggregate",
+ "metric": "revenue",
+ "metric_label": "Revenue ($)",
+ "metric_means": "total of payment amounts",
+ "counted_from": "SAKILA.DW.FACT_PAYMENT (payments)",
+ "group_by": "none",
+ "filters": {
+  "start_date": "2005-06-01",
+  "end_date": "2005-06-30",
+  "category": "Sci-Fi",
+  "store_id": 2
+ },
+ "rows": [
+  {
+   "value": 392.12,
+   "fact_rows": 88,
+   "distinct_customers": 85
+  }
+ ],
+ "rows_returned": 1,
+ "one_row_is": "one row = the whole period",
+ "payments_matched": 88,
+ "sql": "SELECT SUM(x.amount) AS value,\n       COUNT(*) AS fact_rows,\n       COUNT(DISTINCT c.customer_id) AS distinct_customers\nFROM SAKILA.DW.FACT_PAYMENT x\nJOIN SAKILA.DW.DIM_FILM f     ON f.film_key = x.film_key\nJOIN SAKILA.DW.DIM_STORE s    ON s.store_key = x.store_key\nJOIN SAKILA.DW.DIM_CUSTOMER c ON c.customer_key = x.customer_key\nWHERE x.payment_ts >= '2005-06-01'\n  AND x.payment_ts < DATEADD(day, 1, '2005-06-30'::DATE)\n  AND f.category = 'Sci-Fi'\n  AND s.store_id = 2",
+ "query_id": "01c8220b-0303-cbe0-001f-8163001a213e",
+ "no_data": false,
+ "notes": []
+}
+
+### find_rentals limit=100000
+{
+ "tool": "find_rentals",
+ "filters": {
+  "start_date": "2005-07-01",
+  "end_date": "2005-07-01",
+  "limit": 200
+ },
+ "rows_returned": 0,
+ "total_matching_rentals": 0,
+ "one_row_is": "One row = one rental: one copy of one film rented by one customer on one date, handled by one staff member. Counting rows counts rentals, NOT customers.",
+ "sql": "SELECT r.rental_id,\n       TO_CHAR(r.rental_ts, 'YYYY-MM-DD HH24:MI') AS rented_at,\n       f.title, f.category, s.store_id,\n       c.customer_id, c.first_name || ' ' || c.last_name AS customer,\n       TO_CHAR(r.return_ts, 'YYYY-MM-DD HH24:MI') AS returned_at,\n       r.days_out,\n       COUNT(*) OVER () AS total_matching\nFROM SAKILA.DW.FACT_RENTAL r\nJOIN SAKILA.DW.DIM_FILM f     ON f.film_key = r.film_key\nJOIN SAKILA.DW.DIM_STORE s    ON s.store_key = r.store_key\nJOIN SAKILA.DW.DIM_CUSTOMER c ON c.customer_key = r.customer_key\nWHERE r.rental_ts >= '2005-07-01'\n  AND r.rental_ts < DATEADD(day, 1, '2005-07-01'::DATE)\nORDER BY r.rental_ts, r.rental_id\nLIMIT 200",
+ "query_id": "01c8220b-0303-cc0b-001f-8163001a3122",
+ "notes": [
+  "You asked for 100000 rows; the limit is capped at 200.",
+  "No rentals matched these filters. That means no data for this slice, not that the answer is zero."
+ ]
+}
+
+### group_by injection
+REJECTED: ToolInputError: group_by 'store; DROP TABLE SAKILA.DW.FACT_PAYMENT' is not allowed. Choose one of: none, month, category, store, country, rating.
+
+### metric injection
+REJECTED: ToolInputError: metric 'SUM(amount)); DROP TABLE x; --' is not allowed. Choose one of: revenue, payment_count, avg_payment, rental_count, distinct_customers, avg_days_out.
+
+### date injection
+REJECTED: ToolInputError: start_date must be a date written YYYY-MM-DD, got "2005-07-01' OR 1=1 --".
+
+### table injection
+REJECTED: ToolInputError: table 'FACT_RENTAL; DROP TABLE FACT_RENTAL' is not allowed. Choose one of: DIM_CUSTOMER, DIM_DATE, DIM_FILM, DIM_STAFF, DIM_STORE, FACT_PAYMENT, FACT_RENTAL.
+
+### category not in allow-list
+REJECTED: ToolInputError: category 'Romance' is not allowed. Choose one of: Action, Animation, Children, Classics, Comedy, Documentary, Drama, Family, Foreign, Games, Horror, Music, New, Sci-Fi, Sports, Travel.
+
+### end before start
+REJECTED: ToolInputError: start_date 2006-01-01 is after end_date 2005-01-01.
+
+### query_cost('last')
+{
+ "query_id": "01c8220b-0303-cbab-001f-8163001a111e",
+ "found": true,
+ "status": "SUCCESS",
+ "started": "2026-11-01T18:51:34.048000-08:00",
+ "elapsed_seconds": 1.824,
+ "compile_seconds": 1.142,
+ "execution_seconds": 0.653,
+ "queued_seconds": 0.0,
+ "bytes_scanned": 8720,
+ "rows_produced": 7,
+ "warehouse": "CLASS_WH",
+ "warehouse_size": "X-Small",
+ "cloud_services_credits": 0.000238,
+ "estimated_warehouse_credits": 0.00018139,
+ "credits_note": "Estimate = execution time x 1 credits/hour for a X-Small warehouse. Snowflake actually bills the warehouse per second with a 60-second minimum each time it resumes, shared by all queries running on it.",
+ "sql": "SELECT QUERY_ID, EXECUTION_STATUS, START_TIME,\n       TOTAL_ELAPSED_TIME, COMPILATION_TIME, EXECUTION_TIME, QUEUED_OVERLOAD_TIME,\n       BYTES_SCANNED, ROWS_PRODUCED, WAREHOUSE_NAME, WAREHOUSE_SIZE,\n       CREDITS_USED_CLOUD_SERVICES\nFROM TABLE(SAKILA.INFORMATION_SCHEMA.QUERY_HISTORY_BY_USER(RESULT_LIMIT => 1000))\nWHERE QUERY_ID = '01c8220b-0303-cbab-001f-8163001a111e'",
+ "cost_query_id": "01c8220b-0303-cc0b-001f-8163001a3126"
+}
+
+### query_cost bad id
+REJECTED: ToolInputError: query_id must look like 01b2c3d4-0000-1234-0000-0001a2b3c4d5, got 'select 1'.
