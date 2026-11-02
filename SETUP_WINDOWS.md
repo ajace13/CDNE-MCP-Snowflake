@@ -24,7 +24,7 @@ Python 3.13 is used because 3.14 is newer than some Snowflake wheels.
 .venv\Scripts\python check_connection.py
 ```
 
-It prints your user and role, the SAKILA.DW tables, revenue by store, and what that query cost. The two stores should add up to 67,406.56, the Week 4 check. Last, it tries to create a temporary table, which should be **refused**.
+It prints your user and role, the SAKILA.DW tables, revenue by store, and what that query cost. The two stores should add up to 67,406.56, the Week 4 check. Last, it tries an `UPDATE` that changes nothing (`WHERE 1 = 0`), which the read-only role should **refuse**.
 
 ## 4a. Claude Desktop
 
@@ -40,6 +40,15 @@ claude mcp list
 ```
 
 That writes `.mcp.json` in this folder. Inside `claude`, `/mcp` shows the server and its four tools.
+
+## 5. The Streamlit app
+
+```powershell
+.venv\Scripts\python -m pip install -r requirements.txt   # adds streamlit, altair, pandas
+.venv\Scripts\python -m streamlit run app.py
+```
+
+It opens in the browser at http://localhost:8501 and uses the same `[connections.claude]` key and read-only role.
 
 ## Try it
 

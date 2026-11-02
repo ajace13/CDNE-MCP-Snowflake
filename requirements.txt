@@ -2,4 +2,7 @@
 mcp[cli]>=1.9,<2          # FastMCP lives at mcp.server.fastmcp in 1.x (2.x renamed it)
 snowflake-connector-python>=3.12
 cryptography>=42
+streamlit>=1.50           # the app (Parts 2 and 3); uses width="stretch" and st.code(wrap_lines=...)
+altair>=5
+pandas>=2
 pytest>=8
