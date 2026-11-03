@@ -1,4 +1,4 @@
-# CNDE Assignment 5: MCP server and Streamlit app over the Sakila star schema
+# MCP server and Streamlit app over the Sakila star schema
 
 Two ways to ask the Week 4 warehouse a question in plain English, built on the same four tools:
 
